@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -15,6 +16,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	scraper "github.com/rdoorn/go-cloudflare-scraper"
+	//scraper "github.com/rdoorn/go-cloudflare-scraper"
 )
 
 // ErrBadHandshake is returned when the server response to opening handshake is
@@ -166,11 +170,18 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 			req.AddCookie(cookie)
 		}
 	}
+	if scraper.Cfduid != nil {
+		req.AddCookie(scraper.Cfduid)
+	}
+	if scraper.Cfclearance != nil {
+		req.AddCookie(scraper.Cfclearance)
+	}
 
 	// Set the request headers using the capitalization for names and values in
 	// RFC examples. Although the capitalization shouldn't matter, there are
 	// servers that depend on it. The Header.Set method is not used because the
 	// method canonicalizes the header names.
+	req.Header["User-Agent"] = []string{scraper.UserAgent}
 	req.Header["Upgrade"] = []string{"websocket"}
 	req.Header["Connection"] = []string{"Upgrade"}
 	req.Header["Sec-WebSocket-Key"] = []string{challengeKey}
@@ -279,11 +290,26 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		return nil, nil, err
 	}
 
+	fmt.Printf("SOCKET: request: %+v\n", req)
+
+	/*
+		scraper, err := scraper.NewTransport(http.DefaultTransport)
+		if err != nil {
+			log.Fatal(err)
+		}
+	*/
+
+	/*
+		http.DefaultTransport = scraper
+	*/
+	//client := http.Client{Transport: scraper}
+
 	resp, err := http.ReadResponse(conn.br, req)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	fmt.Printf("SOCKET: response: %+v\n", resp)
 	if d.Jar != nil {
 		if rc := resp.Cookies(); len(rc) > 0 {
 			d.Jar.SetCookies(u, rc)
@@ -300,6 +326,7 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		buf := make([]byte, 1024)
 		n, _ := io.ReadFull(resp.Body, buf)
 		resp.Body = ioutil.NopCloser(bytes.NewReader(buf[:n]))
+		fmt.Printf("Buf: %+v\n", string(buf))
 		return nil, resp, ErrBadHandshake
 	}
 
