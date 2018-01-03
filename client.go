@@ -290,7 +290,7 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		return nil, nil, err
 	}
 
-	fmt.Printf("SOCKET: request: %+v\n", req)
+	//fmt.Printf("SOCKET: request: %+v\n", req)
 
 	/*
 		scraper, err := scraper.NewTransport(http.DefaultTransport)
@@ -309,7 +309,7 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		return nil, nil, err
 	}
 
-	fmt.Printf("SOCKET: response: %+v\n", resp)
+	//fmt.Printf("SOCKET: response: %+v\n", resp)
 	if d.Jar != nil {
 		if rc := resp.Cookies(); len(rc) > 0 {
 			d.Jar.SetCookies(u, rc)
